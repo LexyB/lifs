@@ -1,0 +1,168 @@
+---
+title: "ADVANCE CRIME STATISTICS-LEGAL INFORMATICS AND FORENSIC INSTITUTE"
+author: "Alex Ogbole"
+date: "12/13/2019"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+
+```
+
+DEFINITIONS OF VARIABLES:
+
+
+Criminal damage & arson: Criminal damage is the intentional and malicious damage to the home, other property or vehicles and includes graffiti. Arson is the act of deliberately setting fire to property, including buildings and vehicles.
+
+Public disorder and weapons:Public disorder is violent activity such as rioting or fighting in public place. Weapons offence is any offensive weapon or any article made, adapted, or intended for incapacitating someone.
+
+Shoplifting: the criminal action of stealing goods from a store while pretending to be a customer.
+
+Other theft: relates to theft from a person without the threat or use of force or violence which includes theft by an employee, blackmail and making off without payment.
+
+
+Drugs: offense refers to the possession, use, sale or furnishing of any drug or intoxicating substance or drug paraphernalia, that is prohibited by law
+
+Research Question: Does Public disorder and weapons affect Shoplifting?
+
+
+Goal of Research
+
+The goal of the research is to Predict correlation between Public disorder and weapons and shoplifting and which potentially could be used in decision making in the criminal justice system in the United Kingdom
+
+Hypothesis: 
+
+
+Assuming that Public disorder is a potential factor that may be delibrate in causing distraction in a particular area
+
+There may be a correlation between Shoplifting and other dependent variables.
+
+There may possibly be a relationship between variables that could provide a linear regression
+
+There may be a possible relationship between the variables that may provide a Multiple linear regression
+
+
+Methodology
+
+
+1.Identify Sample set and Population size
+
+  Daily neighbourhood crime data of the United kingdom from jan-dec 2012 is used for this experiment.
+
+2.Collection and cleaning of datasets and categorizing data types to be used which would be numeric.
+
+  Datasets are collected from United Kingdom police website and required variables are selected programmatically in r.
+
+
+```{r echo=FALSE}
+#Import csv with more than 8 columns into a list
+loaded_files<- list.files(path="data", pattern="*.csv", full.names=TRUE)
+#Use the function lapply (list apply) to apply the read.csv function to the imported files
+loaded_files2 <- lapply(loaded_files, read.csv)
+#Bind the data into a single csv file
+binded_files<- do.call("rbind", loaded_files2)
+
+library(dplyr)
+needed_columns<-select(binded_files,  Month,Force, Neighbourhood, Criminal.damage.and.arson
+, Shoplifting, Other.theft, Drugs, Public.disorder.and.weapons)
+```
+
+1a.THE CORRELATION OF VARIABLES
+
+```{r}
+cor_of_data<-cor(binded_files[c('Criminal.damage.and.arson',
+                                'Shoplifting', 'Other.theft',
+                                'Drugs', 'Public.disorder.and.weapons')],
+                 method = c("pearson"))
+round(cor_of_data,2)
+```
+It appears that at 0.69 correlation coefficient between public.disorder.and.weapons and shoplifting there is a positive relationship. If the scatterplot doesn’t indicate there’s at least somewhat of a linear relationship, the correlation doesn’t mean much.
+
+1b. Let's compute the linear regression model between public.disorder.and.weapons and shoplifting
+ 
+ General linear formular y = ax + b 
+ 
+ Note: "a" intercept, b = coefficients and x = predictor
+ 
+```{r}
+pub.dis.w<- binded_files$Public.disorder.and.weapons
+shoplifting<- binded_files$Shoplifting
+lmodel<-lm(shoplifting~pub.dis.w)
+print(summary(lmodel))
+```
+a=0.813352 b=1.768164
+
+Derived equation: shoplifting = 0.813352 * Public.disorder.and.weapons  + 1.768164 
+
+THE LINEAR MODEL EVALUATES THE FOLLOWING
+
+  1. t-value  = 237.46
+  
+  2. Degree of freedom = 63255
+  
+  3. p-value (Significance level of t-value) = 2.2e-16
+  
+  4. F-Statistic: 5.639e+04 on 1
+  
+#A LINEAR GRAPH SHOWING THE RELATIONSHIP
+
+```{r }
+df<-binded_files[, c("Public.disorder.and.weapons", "Shoplifting")]
+
+library(ggpubr)
+ggscatter(df, x = "Shoplifting", y = "Public.disorder.and.weapons",
+   color = "black", shape = 21, size = 3,
+   add = "reg.line",  
+   add.params = list(color = "red", fill = "lightgray"), 
+   conf.int = TRUE,
+   cor.coef = TRUE, 
+   cor.coeff.args = list(method = "pearson", label.x = 3, label.sep = "\n")
+   )
+```  
+
+From the graph, there isn't a very clear linear representation given the distribution of the variables. Now let's add some more variables to the model. This multiple model might increase or decrease the existing relationship.
+
+#1c. MULTIPLE REGRESSION
+
+General multiple model formular y = a + s1x1 + s2x2 +...snxn
+Note "a" is the intercept, s1 and s2 are coefficients and x1,x2 predictors.
+ 
+```{r}
+cri.arson<-binded_files$Criminal.damage.and.arson
+other.t<-binded_files$Other.theft
+drugs<-binded_files$Drugs
+mmodel<-lm(shoplifting~pub.dis.w+other.t+cri.arson+drugs)
+print(summary(mmodel))
+```
+Negative t-value in response variable means there is a reversal in the directionality of the model, when three independent variables were introduced thereby causing a negetive intercept on the regression slope.
+
+TESTING THE VARIABLES INDEPENDENTLY ON THE MODEL
+```{r}
+mmmodel<-lm(shoplifting~pub.dis.w+cri.arson)
+print(summary(mmmodel))
+```
+Criminal damage and arson as an added variable clamps the effect of the model with a t-value of 2.32 and intercept of 0.088 not being significant.
+
+```{r}
+mmmmodel<-lm(shoplifting~pub.dis.w+drugs)
+print(summary(mmmmodel))
+```
+Drugs as an added variable clamps the effect of the model with a t-value of 16.68 and intercept of 0.59 being only slightly significant.
+
+```{r}
+mmmmmodel<-lm(shoplifting~pub.dis.w+other.t)
+print(summary(mmmmmodel))
+```
+Other crime as an added variable also does not improve the model with a t-value of 5.077 and intercept of 0.16 .
+
+CONCLUSION
+
+At the end of this experiment, a linear model upheld the hypothesis that Public disorder and weapons affect Shoplifting with a correlation coefficient of 0.69 and t-value of 237.46.
+This is sufficient enough to create model for duducing shoplifting crime giving the x amount of public disorder. 
+
+
+In the multiple model, using four variables as predictors appeared not to have a significant effect on the model. Using the variables individually also did not improve the accuracy of the model.
+
+
